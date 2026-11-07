@@ -7,6 +7,17 @@ A no-microcontroller **18650 Li-ion state-of-charge meter**. An **LM3914** light
 > A **Paradox Transistor Lab** project. Pure analog: ten comparators and a
 > reference, no firmware, no ADC.
 
+## Schematic
+
+![LM3914 battery tester schematic: 18650 through a 3.4:1 divider into SIG (pin 5), window set by TRIM-HI/TRIM-LO off REF OUT, MODE tied to V+ for bar mode, 2510SR-1 cathodes on the LED outputs with anodes to +5V](docs/schematic.svg)
+
+## Breadboard layout
+
+![Breadboard layout: LM3914 and 2510SR-1 straddling the trench, 24k/10k input divider, two 10k trimpots, 1.2k R_prog, bypass caps, with a full pin-to-net wiring table and segment-to-pin map](docs/breadboard.svg)
+
+> **Bargraph pinout varies by maker** — confirm which row of your 2510SR-1 is
+> anodes vs cathodes before wiring (anodes → +5 V, cathodes → LM3914 outputs).
+
 ## How it works
 
 The LM3914 holds an internal string of ten comparators tapped across a reference
