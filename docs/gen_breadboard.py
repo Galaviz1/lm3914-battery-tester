@@ -13,6 +13,8 @@ def txt(x,y,s,size=13,c="#111",anchor="middle",weight="normal"):
     e(f'<text x="{x:.0f}" y="{y:.0f}" font-family="Helvetica,Arial,sans-serif" font-size="{size}" fill="{c}" text-anchor="{anchor}" font-weight="{weight}">{s}</text>')
 def hole(x,y,r=5,c="#b9bcc2"):
     e(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{r}" fill="#fff" stroke="{c}" stroke-width="1.5"/>')
+def dot(x,y,r=4,c="#333"):
+    e(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{r}" fill="{c}"/>')
 
 # ---- row y-coordinates ----
 rows={}
@@ -31,11 +33,11 @@ BH=rows['Q-']+PITCH
 def hx(col): return LX+col*PITCH
 def hy(row): return rows[row]
 
-W,H=BW+70, BH+470
+W,H=BW+70, BH+600
 e(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">')
 rect(0,0,W,H,fill="#fbfbf8",stroke="none")
-txt(W/2,40,"LM3914 Li-ion Battery Tester — Breadboard Layout",23,"#111",weight="bold")
-txt(W/2,64,"18650 (3.0–4.2 V) · 5 V powered · bar mode · 2510SR-1 10-seg",14,"#555")
+txt(W/2,40,"TP4056 Charger + LM3914 Indicator — Breadboard Layout",22,"#111",weight="bold")
+txt(W/2,64,"USB 5 V charges the 18650 (TP4056); LM3914 reads the cell → 2510SR-1 bar · bar mode",14,"#555")
 
 # ---- board body ----
 rect(LX-34, TOPY-26, BW-LX+68, BH-TOPY+52, fill="#f4f1ea", stroke="#d8d3c6", sw=2, rx=14)
@@ -168,16 +170,30 @@ e(f'<path d="M {hx(15):.0f} {hy("E")-34} L {hx(22):.0f} {hy("E")-34}" stroke="#1
 # tie both + rails and both - rails together (far right, clear of parts)
 jump(42,'P+',42,'Q+',RED); jump(42,'P-',42,'Q-',BLU)
 
-# ---- input terminals (cell under test) ----
-rect(LX-34, BH+24, 196, 84, fill="#fff7e6", stroke="#e0a800", rx=8)
-txt(LX+64, BH+48,"CELL UNDER TEST (18650)",11,"#9a7b00",weight="bold")
-txt(LX+24, BH+84,"＋",18,"#c0392b"); txt(LX+104, BH+84,"－",16,"#2c3e50")
-line(hx(1), BH+24, hx(1), hy('A'), "#c0392b", 3)       # + -> col1 (24k top)
-line(hx(2), BH+24, hx(2), hy('Q-'), "#2c3e50", 3)      # - -> GND rail (col2)
-txt(hx(1), hy('A')-10,"+cell",9,"#c0392b"); txt(hx(2), BH+118,"–cell→GND",9,"#2c3e50")
+# ---- TP4056 charger + 18650 (below the board) ----
+by0=BH+34; bh=58
+# 18650 cell (below cols 1-4)
+rect(hx(1)-16, by0, 118, bh, fill="#fff7e6", stroke="#e0a800", rx=8)
+txt(hx(2.2), by0+22,"18650",11,"#9a7b00",weight="bold")
+txt(hx(1), by0+46,"＋",14,"#c0392b"); txt(hx(3.6), by0+46,"－",13,"#2c3e50")
+# TP4056 module (below cols 6-14)
+rect(hx(6), by0, 236, bh, fill="#e8f6ef", stroke="#1e8449", rx=8)
+txt(hx(10.5), by0+20,"TP4056 charger",11,"#1e8449",weight="bold")
+txt(hx(10.5), by0+38,"USB 5 V → charges cell · CHRG/STDBY onboard",8,"#1e8449")
+# IN+ -> + rail
+line(hx(7), by0, hx(7), hy('Q+'), "#c0392b", 3); dot(hx(7),hy('Q+')); txt(hx(7), by0-5,"IN+",8,"#c0392b")
+# red node bus: BAT+ = cell+ = divider input (tie cell+, TP4056 BAT+, and col1)
+redy=by0+bh+16
+line(hx(1), by0+bh, hx(1), redy, "#c0392b", 3)
+line(hx(1), redy, hx(13), redy, "#c0392b", 3)
+line(hx(13), by0+bh, hx(13), redy, "#c0392b", 3); txt(hx(13), by0+bh+30,"BAT+",8,"#c0392b")
+line(hx(1), by0, hx(1), hy('A'), "#c0392b", 3); txt(hx(1)-5, hy('A')-10,"cell+",9,"#c0392b",anchor="end")
+# blue GND bus: cell- and TP4056 GND -> board - rail
+line(hx(3.6)*0+hx(4), by0, hx(4), hy('Q-'), "#2c7fb8", 3); dot(hx(4),hy('Q-'))
+line(hx(10), by0, hx(10), hy('Q-'), "#2c7fb8", 3); dot(hx(10),hy('Q-')); txt(hx(10), by0-5,"GND",8,"#2c7fb8")
 
 # ---- wiring table ----
-TBx=300; TBy=BH+30
+TBx=300; TBy=BH+150
 txt(TBx, TBy, "Wiring (LM3914 pin → net)", 14, "#111", anchor="start", weight="bold")
 rows_tbl=[
  ("3  V+","→ + rail (5 V)"),("2  V-","→ – rail (GND)"),("9  MODE","→ + rail (bar mode)"),
@@ -185,6 +201,9 @@ rows_tbl=[
  ("8  REFA","→ 1.2k → – rail"),("6  RHI","→ TRIM-HI wiper"),("4  RLO","→ TRIM-LO wiper"),
  ("1,18..10","→ bargraph cathodes seg1..10"),
  ("bargraph anodes","→ + rail (5 V)"),
+ ("TP4056 IN+","→ + rail (USB 5 V)"),
+ ("TP4056 IN– / BAT–","→ – rail (GND)"),
+ ("TP4056 BAT+","→ cell+ = divider input"),
 ]
 for i,(a,b) in enumerate(rows_tbl):
     yy=TBy+24+i*22

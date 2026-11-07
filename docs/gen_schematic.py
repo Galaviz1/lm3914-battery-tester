@@ -27,8 +27,8 @@ def trim(xc,yt,label,setv):
 
 e(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">')
 rect(0,0,W,H,fill="#fbfbf8",stroke="none")
-txt(W/2,40,"LM3914 Li-ion Battery Tester — Schematic",24,"#111",weight="bold")
-txt(W/2,64,"18650 (3.0–4.2 V) → 10-segment bar · 5 V powered · bar mode",15,"#555")
+txt(W/2,40,"TP4056 Charger + LM3914 Level Indicator — Schematic",23,"#111",weight="bold")
+txt(W/2,64,"USB 5 V charges the 18650 via TP4056; LM3914 reads the cell → 10-segment bar (bar mode)",14,"#555")
 VP,GND=100,800
 line(60,VP,W-60,VP,"#c0392b",3); txt(70,VP-8,"+5 V (USB)",14,"#c0392b",anchor="start",weight="bold")
 line(60,GND,W-60,GND,"#2c3e50",3); txt(70,GND+22,"GND",14,"#2c3e50",anchor="start",weight="bold")
@@ -55,20 +55,38 @@ x9,y9=p[9]; line(x9,y9,x9-46,y9); line(x9-46,y9,x9-46,VP,"#c0392b"); dot(x9-46,V
 # bypass caps zone (far left, x=250)
 BPx=250; line(BPx,VP,BPx,VP+34,"#c0392b"); dot(BPx,VP); capV(BPx,VP+46,"2.2–10 µF"); line(BPx,VP+58,BPx,VP+84); capV(BPx,VP+96,"0.1 µF"); line(BPx,VP+108,BPx,GND,"#2c3e50"); dot(BPx,GND)
 
-# ---------- input divider (x=360) ----------
+# ---------- TP4056 charger -> 18650 -> divider -> SIG ----------
 x5,y5=p[5]
-rect(90,y5-60,120,120,fill="#fff7e6",stroke="#e0a800",rx=8)
-txt(150,y5-38,"CELL UNDER",12,"#9a7b00",weight="bold"); txt(150,y5-22,"TEST 18650",12,"#9a7b00",weight="bold")
-txt(150,y5+2,"＋",20,"#c0392b"); txt(150,y5+50,"－",18,"#2c3e50")
-line(150,y5+58,150,GND,"#2c3e50"); dot(150,GND)
-DVx=360; Ay=y5-120; By=y5; Cy=y5+130
-line(210,Ay,DVx,Ay); line(150,y5-6,150,Ay); line(150,Ay,210,Ay)      # cell+ to top node
-resV(DVx,(Ay+By)/2,"24 kΩ"); line(DVx,Ay,DVx,(Ay+By)/2-28); line(DVx,(Ay+By)/2+28,DVx,By)
-dot(DVx,By); line(DVx,By,x5,By)                                      # SIG tap -> pin5
+GLx=56                                   # left GND bus
+# TP4056 module
+TPx,TPy,TPw,TPh=74,132,152,84
+rect(TPx,TPy,TPw,TPh,fill="#e8f6ef",stroke="#1e8449",rx=8)
+txt(TPx+TPw/2,TPy+26,"TP4056",15,"#1e8449",weight="bold")
+txt(TPx+TPw/2,TPy+44,"Li-ion charger",10,"#1e8449")
+txt(TPx+TPw/2,TPy+64,"CHRG · STDBY LEDs onboard",8,"#777")
+# IN+ -> +5V rail (USB) ; IN- -> GND bus
+line(TPx+28,TPy,TPx+28,VP,"#c0392b"); dot(TPx+28,VP); txt(TPx+32,TPy-6,"IN+",9,"#c0392b",anchor="start")
+line(TPx,TPy+22,GLx,TPy+22,"#2c7fb8"); txt(TPx-2,TPy+18,"IN–",9,"#2c7fb8",anchor="end")
+line(GLx,TPy+22,GLx,GND,"#2c7fb8"); dot(GLx,GND)
+# BAT+ (bottom) -> cell+ ; BAT- -> GND bus
+batpx=TPx+TPw-34
+line(batpx,TPy+TPh,batpx,TPy+TPh+26,"#c0392b"); txt(batpx+4,TPy+TPh+16,"BAT+",9,"#c0392b",anchor="start")
+line(TPx+40,TPy+TPh,TPx+40,TPy+TPh+12,"#2c7fb8"); line(TPx+40,TPy+TPh+12,GLx,TPy+TPh+12,"#2c7fb8"); txt(TPx+36,TPy+TPh+10,"BAT–",9,"#2c7fb8",anchor="end")
+# 18650 cell (battery symbol)
+cy0=TPy+TPh+26
+line(batpx-22,cy0,batpx+22,cy0,"#111",3)        # + plate (long)
+line(batpx-13,cy0+13,batpx+13,cy0+13,"#111",6)  # - plate (short/thick)
+txt(batpx+28,cy0+8,"18650",10,"#9a7b00",anchor="start")
+line(batpx,cy0+13,batpx,cy0+40,"#2c7fb8"); line(batpx,cy0+40,GLx,cy0+40,"#2c7fb8")  # cell- -> GND
+# cell+ node -> ÷3.4 divider -> SIG
+DVx=330; By=y5; Cy=y5+130
+line(batpx,cy0,DVx,cy0,"#c0392b"); dot(batpx,cy0,3,"#c0392b")   # cell+/BAT+ to divider top
+resV(DVx,(cy0+By)/2,"24 kΩ"); line(DVx,cy0,DVx,(cy0+By)/2-28); line(DVx,(cy0+By)/2+28,DVx,By)
+dot(DVx,By); line(DVx,By,x5,By)                                 # SIG tap -> pin5
 resV(DVx,(By+Cy)/2,"10 kΩ"); line(DVx,By,DVx,(By+Cy)/2-28); line(DVx,(By+Cy)/2+28,DVx,Cy)
-line(DVx,Cy,DVx,GND,"#2c3e50"); dot(DVx,GND)
+line(DVx,Cy,DVx,GND,"#2c7fb8"); dot(DVx,GND)
 capV(DVx+58,By+34,"100 nF"); dot(DVx,By); line(DVx,By,DVx+58,By); line(DVx+58,By,DVx+58,By+22); line(DVx+58,By+46,DVx+58,GND,"#999")
-txt(DVx,Ay-18,"÷3.4 divider",12,"#9a7b00",weight="bold"); txt(DVx,Ay-3,"4.2V→1.24V · 3.0V→0.88V",10,"#9a7b00")
+txt(DVx+4,cy0-14,"÷3.4 divider (reads cell)",11,"#9a7b00",weight="bold",anchor="start"); txt(DVx+4,cy0+1,"4.2V→1.24V · 3.0V→0.88V",9,"#9a7b00",anchor="start")
 
 # ---------- reference network (trimpots in open area below chip) ----------
 # R_prog on REF ADJ (pin 8)

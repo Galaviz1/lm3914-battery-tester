@@ -1,11 +1,24 @@
-# LM3914 Li-ion Battery Tester
+# TP4056 Charger + LM3914 Li-ion Level Indicator
 
-A no-microcontroller **18650 Li-ion state-of-charge meter**. An **LM3914** lights a
-**2510SR-1 10-segment bargraph** in **bar mode**, mapping the cell voltage from
+A no-microcontroller **18650 charger with a live charge-level bar**. A **TP4056**
+module charges the cell from USB 5 V, while an **LM3914** lights a **2510SR-1
+10-segment bargraph** in **bar mode**, mapping the cell voltage from
 **3.0 V (empty)** to **4.2 V (full)** across the ten segments — one segment ≈ 10 %.
 
-> A **Paradox Transistor Lab** project. Pure analog: ten comparators and a
-> reference, no firmware, no ADC.
+> A **Paradox Transistor Lab** project. Pure analog gauge: ten comparators and a
+> reference, no firmware, no ADC — bolted onto a TP4056 charger.
+
+## Charging (TP4056)
+
+The **TP4056** module takes **USB 5 V** on `IN+/IN–` and charges the 18650 on
+`BAT+/BAT–` with the usual CC/CV profile to 4.2 V (onboard **CHRG** / **STDBY**
+LEDs show charging vs done). The LM3914 shares that same 5 V and reads the cell
+at **`BAT+`** through the divider, so the bar tracks charge state in real time.
+
+- `TP4056 IN+` → +5 V (USB) · `IN– / BAT–` → GND · `BAT+` → cell + → divider input.
+- The gauge is **active while the 5 V is present** (plugged in / charging). To
+  read the level on the cell alone, add a small 5 V boost from `BAT+` to power
+  the LM3914 (future option).
 
 ## Schematic
 
@@ -90,6 +103,7 @@ LM3914 output** per the table above. No resistors.
 
 | Qty | Part | Value / notes |
 |---:|---|---|
+| 1 | TP4056 module | USB Li-ion charger (CHRG/STDBY LEDs onboard) |
 | 1 | LM3914N | dot/bar display driver, 18-pin DIP |
 | 1 | 2510SR-1 | 10-segment LED bargraph (red) |
 | 1 | R (divider top) | 24 kΩ 1 % (or 240 kΩ) |
@@ -98,7 +112,7 @@ LM3914 output** per the table above. No resistors.
 | 2 | Trimpot | 10 kΩ (multiturn preferred) |
 | 1 | Cap | 2.2–10 µF electrolytic (V+ bypass) |
 | 2 | Cap | 100 nF (V+ and SIG) |
-| — | 18650 holder / clip leads | cell under test |
+| 1 | 18650 cell + holder | the cell being charged / measured |
 
 ## Why not direct-drive or a 9 V supply?
 
